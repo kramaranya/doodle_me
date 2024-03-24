@@ -22,13 +22,11 @@ class ImagePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint();
-    double pixelSize =
-        size.width / imageData[0].length; // Ensure the image scales correctly.
+    double pixelSize = size.width / imageData[0].length;
 
     for (int i = 0; i < imageData.length; i++) {
       for (int j = 0; j < imageData[i].length; j++) {
-        double intensity =
-            1 - imageData[i][j]; // Corrected: No division by 255.
+        double intensity = 1 - imageData[i][j];
         paint.color = Color.fromRGBO((intensity * 255).toInt(),
             (intensity * 255).toInt(), (intensity * 255).toInt(), 1);
         canvas.drawRect(
@@ -40,7 +38,6 @@ class ImagePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    // Might want to implement logic to check if the image data has changed if dynamic updates are needed.
     return false;
   }
 }
