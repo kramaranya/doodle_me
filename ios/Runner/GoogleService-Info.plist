@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBQ1PD1sI_NQGgxe1Zm6KxKL8T_mK3Pqlk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>124697821162</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.doodleMe</string>
+	<key>PROJECT_ID</key>
+	<string>doodle-me-eeb6e</string>
+	<key>STORAGE_BUCKET</key>
+	<string>doodle-me-eeb6e.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:124697821162:ios:40fc71e2baf48d61cc3c93</string>
+</dict>
+</plist>
