@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:math' as math;
 
 class ResultScreen extends StatefulWidget {
@@ -129,15 +130,29 @@ class _ResultScreenState extends State<ResultScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            Container(
-              width: 280,
-              height: 280,
-              child: CustomPaint(
-                painter: ImagePainter(widget.encodedDrawing),
-              ),
-            ),
+            //Container(
+            //  width: 280,
+            //  height: 280,
+            //  child: CustomPaint(
+            //    painter: ImagePainter(widget.encodedDrawing),
+            //  ),
+            //),
             SizedBox(height: 20),
-            //Image.asset('assets/flower.jpeg'),
+            FutureBuilder(
+              future: FirebaseStorage.instance
+                  .ref('$predictedClass.webp')
+                  .getDownloadURL(),
+              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData) {
+                  return Image.network(snapshot.data!);
+                } else if (snapshot.error != null) {
+                  return Text('Error loading image: ${snapshot.error}');
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
+            ),
             SizedBox(height: 20),
             Text(
               '$predictedClass',
