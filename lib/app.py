@@ -1,8 +1,6 @@
-from flask import Flask, request, jsonify
-from PIL import Image, ImageDraw
+from flask import Flask, request, jsonify, send_file
 import numpy as np
-from skimage.draw import line_aa
-from skimage.transform import resize
+import imageio
 import cv2
 
 app = Flask(__name__)
@@ -15,18 +13,18 @@ def preprocess_drawing(drawing, output_size=(28, 28)):
             cv2.line(img, 
                      (int(stroke[0][i-1]), int(stroke[1][i-1])), 
                      (int(stroke[0][i]), int(stroke[1][i])), 
-                     (0, 0, 0), 20)
-    #cv2.imwrite('step_initial_drawing.png', img)
+                     (0, 0, 0), 17)
+    cv2.imwrite('step_initial_drawing.png', img)
 
     img = cv2.resize(img, output_size, interpolation=cv2.INTER_AREA)
 
-    #cv2.imwrite('step_resized.png', img)
+    cv2.imwrite('step_resized.png', img)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     img_gray = 255 - img_gray
     
     img_normalized = img_gray / 255.0
-    #cv2.imwrite('step_normalized.png', img_normalized * 255)
+    cv2.imwrite('step_normalized.png', img_normalized * 255)
     
     return img_normalized
 

@@ -74,6 +74,7 @@ flutter:
     - assets/drawing1.gif
     - assets/models/model2.tflite
     - assets/models/model5.tflite
+    - assets/models/CNN_model.tflite
     - assets/classes.txt
     - assets/class_names.txt
 

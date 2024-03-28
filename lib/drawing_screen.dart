@@ -67,7 +67,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
     final screenSize = MediaQuery.of(context).size;
     final drawingAreaSize = screenSize.width;
     final offsetX = 0.0;
-    final offsetY = (screenSize.height - drawingAreaSize) / 2;
+    final offsetY = (screenSize.height - drawingAreaSize) / 5;
     final leftBoundary = offsetX;
     final rightBoundary = offsetX + drawingAreaSize;
     final topBoundary = 1.5 * offsetY;
@@ -174,7 +174,7 @@ class DrawingPainter extends CustomPainter {
     Paint paint = Paint()
       ..color = Colors.black
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 15.0;
+      ..strokeWidth = 7.0;
 
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {

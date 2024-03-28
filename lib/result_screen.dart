@@ -15,34 +15,6 @@ class ResultScreen extends StatefulWidget {
   _ResultScreenState createState() => _ResultScreenState();
 }
 
-class ImagePainter extends CustomPainter {
-  final List<List<double>> imageData;
-
-  ImagePainter(this.imageData);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint();
-    double pixelSize = size.width / imageData[0].length;
-
-    for (int i = 0; i < imageData.length; i++) {
-      for (int j = 0; j < imageData[i].length; j++) {
-        double intensity = 1 - imageData[i][j];
-        paint.color = Color.fromRGBO((intensity * 255).toInt(),
-            (intensity * 255).toInt(), (intensity * 255).toInt(), 1);
-        canvas.drawRect(
-            Rect.fromLTWH(j * pixelSize, i * pixelSize, pixelSize, pixelSize),
-            paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
-
 class _ResultScreenState extends State<ResultScreen> {
   final FlutterTts flutterTts = FlutterTts();
   String predictedClass = '';
@@ -63,7 +35,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Future<void> loadModel() async {
     try {
-      interpreter = await Interpreter.fromAsset('assets/models/model5.tflite');
+      interpreter =
+          await Interpreter.fromAsset('assets/models/CNN_model.tflite');
       final labelData = await rootBundle.loadString('assets/class_names.txt');
       classLabels = labelData.split('\n');
       predict();
@@ -84,7 +57,6 @@ class _ResultScreenState extends State<ResultScreen> {
         .reshape([1, classLabels!.length]);
 
     interpreter?.run(input, output);
-    predictedClass = '4';
     List<double> scores = output[0].cast<double>();
 
     int highestScoreIndex =
@@ -105,15 +77,10 @@ class _ResultScreenState extends State<ResultScreen> {
     print(top5ClassesAndScores);
   }
 
-  Float32List preprocessData(List<List<List<int>>> data) {
-    return Float32List.fromList(data
-        .expand((x) => x.expand((y) => y).toList())
-        .map((x) => x / 255.0)
-        .toList());
-  }
-
   @override
   Widget build(BuildContext context) {
+    String displayClass = predictedClass.replaceAll('_', ' ');
+
     return Scaffold(
       appBar: AppBar(
         title: Text(''),
@@ -130,13 +97,6 @@ class _ResultScreenState extends State<ResultScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            //Container(
-            //  width: 280,
-            //  height: 280,
-            //  child: CustomPaint(
-            //    painter: ImagePainter(widget.encodedDrawing),
-            //  ),
-            //),
             SizedBox(height: 20),
             FutureBuilder(
               future: FirebaseStorage.instance
@@ -155,7 +115,7 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
             SizedBox(height: 20),
             Text(
-              '$predictedClass',
+              '$displayClass',
               style: TextStyle(
                 fontFamily: 'Pacifico',
                 fontSize: 60,
@@ -169,7 +129,8 @@ class _ResultScreenState extends State<ResultScreen> {
                 width: 200,
                 child: ElevatedButton(
                   onPressed: () async {
-                    await flutterTts.speak(predictedClass);
+                    flutterTts.setSpeechRate(0.3);
+                    await flutterTts.speak(displayClass);
                   },
                   child: Text(
                     'Pronounce it',
