@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 import 'result_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -61,6 +65,65 @@ Future<List<List<double>>> sendDrawingToServer(List<Offset?> points) async {
 
 class _DrawingScreenState extends State<DrawingScreen> {
   List<Offset?> points = [];
+  String predictedClass = '';
+  Interpreter? interpreter;
+  List<String>? top5ClassesAndScores;
+  List<String>? classLabels;
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   printEncodedDrawing();
+  //   loadModel();
+  // }
+
+  void printEncodedDrawing(List<List<double>> encodedDrawing) {
+    print("Encoded Drawing Data: $encodedDrawing");
+  }
+
+  Future<void> loadModel(List<List<double>> encodedDrawing) async {
+    try {
+      interpreter =
+          await Interpreter.fromAsset('assets/models/CNN_model.tflite');
+      final labelData = await rootBundle.loadString('assets/class_names.txt');
+      classLabels = labelData.split('\n');
+      predict(encodedDrawing);
+    } catch (e) {
+      print('Failed to load model: $e');
+      setState(() {
+        predictedClass = 'Failed to load model';
+      });
+    }
+  }
+
+  void predict(List<List<double>> encodedDrawing) async {
+    var normalizedData = encodedDrawing.expand((row) => row).toList();
+
+    var input = Float32List.fromList(normalizedData).reshape([1, 28, 28, 1]);
+
+    var output = List.filled(1 * classLabels!.length, 0.0)
+        .reshape([1, classLabels!.length]);
+
+    interpreter?.run(input, output);
+    List<double> scores = output[0].cast<double>();
+
+    int highestScoreIndex =
+        scores.indexWhere((score) => score == scores.reduce(math.max));
+
+    setState(() {
+      predictedClass = classLabels![highestScoreIndex];
+    });
+
+    final topIndices = List.generate(scores.length, (i) => i)
+      ..sort((a, b) => scores[b].compareTo(scores[a]));
+
+    final top5Indices = topIndices.take(5);
+    top5ClassesAndScores = top5Indices
+        .map((i) => '${classLabels![i]} (${scores[i].toStringAsFixed(2)})')
+        .toList();
+
+    print(top5ClassesAndScores);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,10 +166,13 @@ class _DrawingScreenState extends State<DrawingScreen> {
                   }
                 });
               },
-              onPanEnd: (details) {
+              onPanEnd: (details) async {
                 setState(() {
                   points.add(null);
                 });
+                final encodedDrawing = await sendDrawingToServer(points);
+                printEncodedDrawing(encodedDrawing);
+                loadModel(encodedDrawing);
               },
               child: CustomPaint(
                 painter: DrawingPainter(points: points),
@@ -124,8 +190,8 @@ class _DrawingScreenState extends State<DrawingScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          ResultScreen(encodedDrawing: encodedDrawing),
+                      builder: (context) => ResultScreen(
+                          top5ClassesAndScores: top5ClassesAndScores),
                     ),
                   );
                 } catch (e, stackTrace) {

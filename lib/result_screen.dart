@@ -7,9 +7,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:math' as math;
 
 class ResultScreen extends StatefulWidget {
-  final List<List<double>> encodedDrawing;
+  final List<String>? top5ClassesAndScores;
 
-  ResultScreen({Key? key, required this.encodedDrawing}) : super(key: key);
+  ResultScreen({Key? key, required this.top5ClassesAndScores})
+      : super(key: key);
 
   @override
   _ResultScreenState createState() => _ResultScreenState();
@@ -18,69 +19,23 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   final FlutterTts flutterTts = FlutterTts();
   String predictedClass = '';
-  Interpreter? interpreter;
-  List<String>? top5ClassesAndScores;
-  List<String>? classLabels;
 
   @override
   void initState() {
     super.initState();
-    printEncodedDrawing();
-    loadModel();
-  }
+    flutterTts.setSpeechRate(0.3);
 
-  void printEncodedDrawing() {
-    print("Encoded Drawing Data: ${widget.encodedDrawing}");
-  }
-
-  Future<void> loadModel() async {
-    try {
-      interpreter =
-          await Interpreter.fromAsset('assets/models/CNN_model.tflite');
-      final labelData = await rootBundle.loadString('assets/class_names.txt');
-      classLabels = labelData.split('\n');
-      predict();
-    } catch (e) {
-      print('Failed to load model: $e');
-      setState(() {
-        predictedClass = 'Failed to load model';
-      });
+    if (widget.top5ClassesAndScores != null &&
+        widget.top5ClassesAndScores!.isNotEmpty) {
+      predictedClass = widget.top5ClassesAndScores!.first
+          .split(' ')
+          .first
+          .replaceAll('_', ' ');
     }
-  }
-
-  void predict() async {
-    var normalizedData = widget.encodedDrawing.expand((row) => row).toList();
-
-    var input = Float32List.fromList(normalizedData).reshape([1, 28, 28, 1]);
-
-    var output = List.filled(1 * classLabels!.length, 0.0)
-        .reshape([1, classLabels!.length]);
-
-    interpreter?.run(input, output);
-    List<double> scores = output[0].cast<double>();
-
-    int highestScoreIndex =
-        scores.indexWhere((score) => score == scores.reduce(math.max));
-
-    setState(() {
-      predictedClass = classLabels![highestScoreIndex];
-    });
-
-    final topIndices = List.generate(scores.length, (i) => i)
-      ..sort((a, b) => scores[b].compareTo(scores[a]));
-
-    final top5Indices = topIndices.take(5);
-    top5ClassesAndScores = top5Indices
-        .map((i) => '${classLabels![i]} (${scores[i].toStringAsFixed(2)})')
-        .toList();
-
-    print(top5ClassesAndScores);
   }
 
   @override
   Widget build(BuildContext context) {
-    String displayClass = predictedClass.replaceAll('_', ' ');
-
     return Scaffold(
       appBar: AppBar(
         title: Text(''),
@@ -100,7 +55,8 @@ class _ResultScreenState extends State<ResultScreen> {
             SizedBox(height: 20),
             FutureBuilder(
               future: FirebaseStorage.instance
-                  .ref('$predictedClass.webp')
+                  .ref(
+                      '${predictedClass.replaceAll(' ', '_')}.webp') // Assuming your files are named using underscores, not spaces
                   .getDownloadURL(),
               builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
                 if (snapshot.connectionState == ConnectionState.done &&
@@ -115,7 +71,7 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
             SizedBox(height: 20),
             Text(
-              '$displayClass',
+              '$predictedClass',
               style: TextStyle(
                 fontFamily: 'Pacifico',
                 fontSize: 60,
@@ -130,7 +86,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     flutterTts.setSpeechRate(0.3);
-                    await flutterTts.speak(displayClass);
+                    await flutterTts.speak(predictedClass);
                   },
                   child: Text(
                     'Pronounce it',
@@ -152,7 +108,7 @@ class _ResultScreenState extends State<ResultScreen> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
-                'Predicted Class: $top5ClassesAndScores',
+                'Predicted Classes: ${widget.top5ClassesAndScores?.join(', ') ?? "N/A"}',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
