@@ -70,13 +70,6 @@ class _DrawingScreenState extends State<DrawingScreen> {
   List<String>? top5ClassesAndScores;
   List<String>? classLabels;
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   printEncodedDrawing();
-  //   loadModel();
-  // }
-
   void printEncodedDrawing(List<List<double>> encodedDrawing) {
     print("Encoded Drawing Data: $encodedDrawing");
   }
@@ -85,7 +78,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
     try {
       interpreter =
           await Interpreter.fromAsset('assets/models/CNN_model.tflite');
-      final labelData = await rootBundle.loadString('assets/class_names.txt');
+      final labelData = await rootBundle.loadString('assets/classes.txt');
       classLabels = labelData.split('\n');
       predict(encodedDrawing);
     } catch (e) {
@@ -137,9 +130,6 @@ class _DrawingScreenState extends State<DrawingScreen> {
     final bottomBoundary = 1.5 * offsetY + drawingAreaSize;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Draw Your Doodle'),
-      ),
       body: Stack(
         children: [
           Positioned(
@@ -185,19 +175,13 @@ class _DrawingScreenState extends State<DrawingScreen> {
             right: 20,
             child: FloatingActionButton(
               onPressed: () async {
-                try {
-                  final encodedDrawing = await sendDrawingToServer(points);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ResultScreen(
-                          top5ClassesAndScores: top5ClassesAndScores),
-                    ),
-                  );
-                } catch (e, stackTrace) {
-                  print("Error sending drawing to server: $e");
-                  print("Stack Trace: $stackTrace");
-                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ResultScreen(
+                        top5ClassesAndScores: top5ClassesAndScores),
+                  ),
+                );
               },
               tooltip: 'See Result',
               child: Icon(Icons.check),

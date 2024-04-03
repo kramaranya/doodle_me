@@ -1,0 +1,46 @@
+{
+    "language": "English",
+    "@language":{
+        "description": "The current Language"
+    },
+    "doodle": "Doodle",
+    "@doodle":{
+        "description": "Doodle"
+    },
+    "draw": "Draw",
+    "@draw":{
+        "description": "Draw"
+    },
+    "settings": "Settings",
+    "@settings":{
+        "description": "Settings"
+    },
+    "languageCode": "en",
+    "@languageCode":{
+        "description": "Language Code"
+    },
+    "pronounce": "Pronounce",
+    "@pronounce":{
+        "description": "pronounce"
+    },
+    "yourDrawingLooksLike": "Your drawing looks like",
+    "@yourDrawingLooksLike":{
+        "description": "yourDrawingLooksLike"
+    },
+    "score": "Score",
+    "@score":{
+        "description": "score"
+    },
+    "result": "Result",
+    "@result":{
+        "description": "result"
+    },
+    "search": "Search",
+    "@search":{
+        "description": "search"
+    },
+    "nightmode": "Night Mode",
+    "@nightmode":{
+        "description": "nightmode"
+    }
+}

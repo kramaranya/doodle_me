@@ -1,27 +1,73 @@
+import 'package:doodle_me/list_objects.dart';
 import 'package:flutter/material.dart';
-import 'list_objects.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/l10n.dart';
+import 'settings_screen.dart';
 import 'drawing_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const BottomNavigationBarExampleApp());
+  runApp(BottomNavigationBarApp());
 }
 
-class BottomNavigationBarExampleApp extends StatelessWidget {
-  const BottomNavigationBarExampleApp({super.key});
+class BottomNavigationBarApp extends StatefulWidget {
+  @override
+  _BottomNavigationBarAppState createState() => _BottomNavigationBarAppState();
+}
+
+class _BottomNavigationBarAppState extends State<BottomNavigationBarApp> {
+  Locale _currentLocale = Locale('en');
+  ThemeMode _currentThemeMode = ThemeMode.light;
+
+  void setLocale(Locale locale) {
+    setState(() {
+      _currentLocale = locale;
+    });
+  }
+
+  void setThemeMode(ThemeMode themeMode) {
+    setState(() {
+      _currentThemeMode = themeMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: BottomNavigationBarExample(),
+    return MaterialApp(
+      home: BottomNavigationBarExample(
+        setLocale: setLocale,
+        setThemeMode: setThemeMode,
+        currentThemeMode: _currentThemeMode,
+      ),
+      supportedLocales: L10n.all,
+      locale: _currentLocale,
+      themeMode: _currentThemeMode,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
     );
   }
 }
 
 class BottomNavigationBarExample extends StatefulWidget {
-  const BottomNavigationBarExample({super.key});
+  final Function(Locale) setLocale;
+  final Function(ThemeMode) setThemeMode;
+  final ThemeMode currentThemeMode;
+
+  BottomNavigationBarExample({
+    Key? key,
+    required this.setLocale,
+    required this.setThemeMode,
+    required this.currentThemeMode,
+  }) : super(key: key);
 
   @override
   State<BottomNavigationBarExample> createState() =>
@@ -31,22 +77,28 @@ class BottomNavigationBarExample extends StatefulWidget {
 class _BottomNavigationBarExampleState
     extends State<BottomNavigationBarExample> {
   int _selectedIndex = 0;
+  List<Widget> _widgetOptions = [];
 
-  // Method to choose the widget based on the selected index
-  Widget _choosePage(int index) {
-    switch (index) {
-      case 0:
-        return HomePage();
-      case 1:
-        return DrawingScreen();
-      case 2:
-        return Text(
-          'Index 2: Settings',
-          style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-        );
-      default:
-        return Text('Unknown page');
-    }
+  @override
+  void initState() {
+    super.initState();
+    _widgetOptions = [
+      HomePage(),
+      Navigator(
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (context) {
+              return DrawingScreen();
+            },
+          );
+        },
+      ),
+      SettingsScreen(
+        setLocale: widget.setLocale,
+        setThemeMode: widget.setThemeMode,
+        currentThemeMode: widget.currentThemeMode,
+      ),
+    ];
   }
 
   void _onItemTapped(int index) {
@@ -58,27 +110,29 @@ class _BottomNavigationBarExampleState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
       body: Center(
-        child: _choosePage(_selectedIndex),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _widgetOptions,
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.format_list_bulleted_rounded),
-            label: 'Doodles',
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.doodle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.brush),
-            label: 'Draw',
+            label: AppLocalizations.of(context)!.draw,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Settings',
+            label: AppLocalizations.of(context)!.settings,
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 126, 210, 255),
+        selectedItemColor: Colors.blue,
         onTap: _onItemTapped,
       ),
     );
