@@ -6,14 +6,20 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'result_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DrawingScreen extends StatefulWidget {
   @override
   _DrawingScreenState createState() => _DrawingScreenState();
 }
 
-Future<List<List<double>>> sendDrawingToServer(List<Offset?> points) async {
-  var uri = Uri.parse('http://127.0.0.1:5000/preprocess');
+Future<List<List<double>>> sendDrawingToServer(
+    List<Offset?> points, double canvasSize) async {
+  var uri = Uri.parse(
+      'https://doodle-me-flask-64dde020fc72.herokuapp.com/preprocess');
+
+  double width = canvasSize;
+  double height = canvasSize;
 
   List<List<List<double>>> formattedStrokes = [];
   List<double> currentXs = [];
@@ -35,13 +41,15 @@ Future<List<List<double>>> sendDrawingToServer(List<Offset?> points) async {
   if (currentXs.isNotEmpty && currentYs.isNotEmpty) {
     formattedStrokes.add([currentXs, currentYs]);
   }
-  print("formatted: $formattedStrokes");
   var response = await http.post(
     uri,
     headers: {"Content-Type": "application/json"},
-    body: jsonEncode({'strokes': formattedStrokes}),
+    body: jsonEncode({
+      'strokes': formattedStrokes,
+      'canvasSize': {'width': width, 'height': height},
+    }),
   );
-  print(response.body);
+  print(canvasSize);
 
   if (response.statusCode == 200) {
     print("Data sent successfully");
@@ -58,7 +66,6 @@ Future<List<List<double>>> sendDrawingToServer(List<Offset?> points) async {
     return result;
   } else {
     print("Failed to send data with status code: ${response.statusCode}");
-    print("Response body: ${response.body}");
     throw Exception('Failed to load processed drawing');
   }
 }
@@ -69,10 +76,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
   Interpreter? interpreter;
   List<String>? top5ClassesAndScores;
   List<String>? classLabels;
-
-  void printEncodedDrawing(List<List<double>> encodedDrawing) {
-    print("Encoded Drawing Data: $encodedDrawing");
-  }
+  Map<String, String> localizedClassNames = {};
 
   Future<void> loadModel(List<List<double>> encodedDrawing) async {
     try {
@@ -103,8 +107,12 @@ class _DrawingScreenState extends State<DrawingScreen> {
     int highestScoreIndex =
         scores.indexWhere((score) => score == scores.reduce(math.max));
 
+    String predictedKey = classLabels![highestScoreIndex];
+    String localizedPredictedClass =
+        localizedClassNames[predictedKey] ?? predictedKey;
+
     setState(() {
-      predictedClass = classLabels![highestScoreIndex];
+      predictedClass = localizedPredictedClass;
     });
 
     final topIndices = List.generate(scores.length, (i) => i)
@@ -118,41 +126,82 @@ class _DrawingScreenState extends State<DrawingScreen> {
     print(top5ClassesAndScores);
   }
 
+  double topOffsetY = 0.0;
+  double topOffsetX = 0.0;
+  final GlobalKey _gestureDetectorKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => calculateOffset());
+    predictedClass = '';
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    loadLocalizedClassNames();
+  }
+
+  Future<void> loadLocalizedClassNames() async {
+    Locale locale = Localizations.localeOf(context);
+    String fileName = 'assets/class_names_${locale.languageCode}.json';
+    String jsonString = await rootBundle.loadString(fileName);
+    Map<String, dynamic> jsonMap = json.decode(jsonString);
+    setState(() {
+      localizedClassNames =
+          jsonMap.map((key, value) => MapEntry(key, value.toString()));
+    });
+  }
+
+  void calculateOffset() {
+    final RenderBox renderBox =
+        _gestureDetectorKey.currentContext?.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    topOffsetY = offset.dy;
+    topOffsetX = offset.dx;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final drawingAreaSize = screenSize.width;
-    final offsetX = 0.0;
-    final offsetY = (screenSize.height - drawingAreaSize) / 5;
+    final offsetX = 5.0;
+    final offsetY = 5.0;
+    final drawingAreaSize = screenSize.width - 2 * offsetX;
     final leftBoundary = offsetX;
     final rightBoundary = offsetX + drawingAreaSize;
-    final topBoundary = 1.5 * offsetY;
-    final bottomBoundary = 1.5 * offsetY + drawingAreaSize;
+    final topBoundary = offsetY;
+    final bottomBoundary = drawingAreaSize;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          AppLocalizations.of(context)!.drawyourdoodle,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Stack(
         children: [
           Positioned(
             left: offsetX,
             top: offsetY,
             child: GestureDetector(
+              key: _gestureDetectorKey,
               onPanUpdate: (details) {
                 setState(() {
                   RenderBox renderBox = context.findRenderObject() as RenderBox;
                   Offset localPosition =
                       renderBox.globalToLocal(details.globalPosition);
-
-                  double adjustedX = localPosition.dx - offsetX;
-                  double adjustedY = localPosition.dy - offsetY * 1.5;
+                  double adjustedX = localPosition.dx - topOffsetX;
+                  double adjustedY = localPosition.dy - topOffsetY;
 
                   Offset adjustedPosition = Offset(adjustedX, adjustedY);
 
-                  if (localPosition.dx >= leftBoundary &&
-                      localPosition.dx <= rightBoundary &&
-                      localPosition.dy >= topBoundary &&
-                      localPosition.dy <= bottomBoundary) {
+                  if (adjustedX >= leftBoundary &&
+                      adjustedX <= rightBoundary &&
+                      adjustedY >= topBoundary &&
+                      adjustedY <= bottomBoundary) {
                     points.add(adjustedPosition);
-                    print(points);
                   }
                 });
               },
@@ -160,13 +209,65 @@ class _DrawingScreenState extends State<DrawingScreen> {
                 setState(() {
                   points.add(null);
                 });
-                final encodedDrawing = await sendDrawingToServer(points);
-                printEncodedDrawing(encodedDrawing);
+                final encodedDrawing =
+                    await sendDrawingToServer(points, drawingAreaSize);
                 loadModel(encodedDrawing);
               },
               child: CustomPaint(
                 painter: DrawingPainter(points: points),
                 size: Size(drawingAreaSize, drawingAreaSize),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: (screenSize.height - drawingAreaSize) / 3,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color:
+                      const Color.fromARGB(255, 175, 173, 173).withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: AppLocalizations.of(context)!.looksLike + ' ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Color.fromARGB(255, 114, 114, 114)
+                              : Color.fromARGB(255, 167, 167, 167),
+                        ),
+                      ),
+                      TextSpan(
+                        text: predictedClass,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Color.fromARGB(255, 167, 167, 167)
+                              : Color.fromARGB(255, 114, 114, 114),
+                        ),
+                      ),
+                      TextSpan(
+                        text: '...',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Color.fromARGB(255, 114, 114, 114)
+                              : Color.fromARGB(255, 167, 167, 167),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -185,7 +286,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
               },
               tooltip: 'See Result',
               child: Icon(Icons.check),
-              backgroundColor: Color.fromARGB(69, 158, 158, 158),
+              backgroundColor: Color.fromARGB(255, 113, 191, 255),
               foregroundColor: Colors.white,
             ),
           ),
@@ -196,11 +297,13 @@ class _DrawingScreenState extends State<DrawingScreen> {
               onPressed: () {
                 setState(() {
                   points.clear();
+                  predictedClass = '';
+                  top5ClassesAndScores = [];
                 });
               },
               tooltip: 'Clear Drawing',
               child: Icon(Icons.delete),
-              backgroundColor: Color.fromARGB(100, 158, 158, 158),
+              backgroundColor: Color.fromARGB(255, 113, 191, 255),
               foregroundColor: Colors.white,
             ),
           ),
@@ -213,9 +316,11 @@ class _DrawingScreenState extends State<DrawingScreen> {
 class DrawingPainter extends CustomPainter {
   final List<Offset?> points;
   DrawingPainter({required this.points});
+  Paint backgroundPaint = Paint()
+    ..color = const Color.fromARGB(255, 255, 255, 255);
 
   final Paint framePaint = Paint()
-    ..color = Color.fromARGB(129, 184, 184, 184)
+    ..color = Color.fromARGB(255, 113, 191, 255)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 5;
 
@@ -226,13 +331,15 @@ class DrawingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 7.0;
 
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), framePaint);
+
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {
         canvas.drawLine(points[i]!, points[i + 1]!, paint);
       }
     }
-
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), framePaint);
   }
 
   @override

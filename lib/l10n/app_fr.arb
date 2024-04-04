@@ -5,9 +5,19 @@
     "settings": "Paramètres",
     "languageCode": "fr",
     "pronounce": "Prononcer",
-    "yourDrawingLooksLike": "Recherche",
-    "score": "Recherche",
-    "result": "Recherche",
+    "yourDrawingLooksLike": "Votre dessin ressemble",
+    "score": "Probabilité",
+    "result": "Résultat",
     "search": "Recherche",
-    "nightmode": "Recherche"
+    "nightmode": "Mode Nuit",
+    "languageDescription": "Sélectionnez la langue que vous préférez pour l'interface de l'application.",
+    "themeDescription": "Basculez entre le thème clair et sombre pour une meilleure visibilité selon vos préférences.",
+    "explore": "Explorer",
+    "drawyourdoodle": "Dessine ton Doodle",
+    "looksLike": "On dirait",
+    "tryAgainMessage": "Désolé si aucune de ces images ne correspond à votre dessin. Veuillez réessayer de dessiner...",
+    "helpTooltip": "Aide",
+    "weare": "Nous sommes ",
+    "accuracy": "Précision: ",
+    "confident": " convaincus que ce dessin correspond à la catégorie "
 }

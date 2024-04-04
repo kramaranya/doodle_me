@@ -6,11 +6,63 @@ import 'l10n/l10n.dart';
 import 'settings_screen.dart';
 import 'drawing_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(BottomNavigationBarApp());
+  runApp(MaterialApp(home: IntroScreen()));
+}
+
+class IntroScreen extends StatefulWidget {
+  @override
+  _IntroScreenState createState() => _IntroScreenState();
+}
+
+class _IntroScreenState extends State<IntroScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(
+      Duration(seconds: 3),
+      () => Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => BottomNavigationBarApp(),
+      )),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        color: Colors.white,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: Image.asset(
+                  'assets/doodle_logo_front.webp',
+                  width: 200,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 50.0),
+              child: Text(
+                'kramaranya',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class BottomNavigationBarApp extends StatefulWidget {
@@ -76,7 +128,7 @@ class BottomNavigationBarExample extends StatefulWidget {
 
 class _BottomNavigationBarExampleState
     extends State<BottomNavigationBarExample> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
   List<Widget> _widgetOptions = [];
 
   @override

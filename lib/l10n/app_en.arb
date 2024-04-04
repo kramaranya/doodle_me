@@ -42,5 +42,45 @@
     "nightmode": "Night Mode",
     "@nightmode":{
         "description": "nightmode"
+    },
+    "languageDescription": "Select the language you prefer for the app interface.",
+    "@languageDescription":{
+        "description": "languageDescription"
+    },
+    "themeDescription": "Toggle between light and dark theme for better visibility according to your preference.",
+    "@themeDescription":{
+        "description": "themeDescription"
+    },
+    "explore": "Explore",
+    "@explore":{
+        "description": "explore"
+    },
+    "drawyourdoodle": "Draw Your Doodle",
+    "@drawyourdoodle":{
+        "description": "drawyourdoodle"
+    },
+    "looksLike": "It looks like",
+    "@looksLike":{
+        "description": "looksLike"
+    },
+    "tryAgainMessage": "Sorry if none of these images match your drawing. Please try drawing again...",
+    "@tryAgainMessage":{
+        "description": "tryAgainMessage"
+    },
+    "helpTooltip": "Help",
+    "@helpTooltip":{
+        "description": "helpTooltip"
+    },
+    "weare": "We are ",
+    "@weare":{
+        "description": "weare"
+    },
+    "accuracy": "Accuracy: ",
+    "@accuracy":{
+        "description": "accuracy"
+    },
+    "confident": " confident this drawing matches the category ",
+    "@confident":{
+        "description": "confident"
     }
 }

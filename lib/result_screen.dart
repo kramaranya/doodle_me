@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class ResultScreen extends StatefulWidget {
   final List<String>? top5ClassesAndScores;
@@ -16,6 +17,7 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   final FlutterTts flutterTts = FlutterTts();
+  final controller = PageController(viewportFraction: 1);
 
   @override
   void initState() {
@@ -30,9 +32,15 @@ class _ResultScreenState extends State<ResultScreen> {
     String jsonString =
         await DefaultAssetBundle.of(context).loadString(fileName);
     Map<String, dynamic> jsonMap = json.decode(jsonString);
-
     return jsonMap.map((key, value) => MapEntry(key, value.toString()));
   }
+
+  List<String> get filteredTop5ClassesAndScores =>
+      widget.top5ClassesAndScores!.where((prediction) {
+        double score =
+            double.parse(prediction.split('(').last.replaceAll(')', ''));
+        return score > 0;
+      }).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +52,36 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          AppLocalizations.of(context)!.explore,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.help_outline),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext context) {
+                  return Container(
+                    padding: EdgeInsets.all(20),
+                    height: MediaQuery.of(context).size.height * 0.20,
+                    child: Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.tryAgainMessage,
+                        style: TextStyle(fontSize: 18),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+            tooltip: AppLocalizations.of(context)!.helpTooltip,
+          ),
+        ],
+      ),
       body: FutureBuilder<Map<String, String>>(
         future: loadLocalizedClassNames(context),
         builder: (context, snapshot) {
@@ -54,18 +92,81 @@ class _ResultScreenState extends State<ResultScreen> {
             return Center(child: Text('Error loading localized names'));
           }
           Map<String, String> localizedNames = snapshot.data!;
-
-          return PageView.builder(
-            itemCount: widget.top5ClassesAndScores!.length,
-            itemBuilder: (context, index) {
-              String currentPrediction = widget.top5ClassesAndScores![index];
-              String key = currentPrediction.split(' ').first;
-              String className = localizedNames[key] ?? key;
-              String score =
-                  currentPrediction.split('(').last.replaceAll(')', '');
-
-              return buildPredictionPage(key, className, score, context);
-            },
+          return Stack(
+            children: [
+              PageView.builder(
+                controller: controller,
+                itemCount: filteredTop5ClassesAndScores.length,
+                itemBuilder: (context, index) {
+                  String currentPrediction =
+                      filteredTop5ClassesAndScores[index];
+                  String key = currentPrediction.split(' ').first;
+                  String className = localizedNames[key] ?? key;
+                  String score =
+                      currentPrediction.split('(').last.replaceAll(')', '');
+                  double scoreValue = double.tryParse(score) ?? 0;
+                  String scorePercentage =
+                      (scoreValue * 100).toStringAsFixed(1) + '%';
+                  return buildPredictionPage(
+                      key, className, scorePercentage, context);
+                },
+              ),
+              if (filteredTop5ClassesAndScores.length > 1)
+                Positioned(
+                  top: 0,
+                  bottom: 100,
+                  left: 10,
+                  child: Center(
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                      onPressed: () {
+                        if (controller.page! > 0) {
+                          controller.previousPage(
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              if (filteredTop5ClassesAndScores.length > 1)
+                Positioned(
+                  top: 0,
+                  bottom: 100,
+                  right: 10,
+                  child: Center(
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_forward_ios, color: Colors.white),
+                      onPressed: () {
+                        if (controller.page! <
+                            filteredTop5ClassesAndScores.length - 1) {
+                          controller.nextPage(
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 8,
+                child: Center(
+                  child: SmoothPageIndicator(
+                    controller: controller,
+                    count: filteredTop5ClassesAndScores.length,
+                    effect: WormEffect(
+                      dotHeight: 10,
+                      dotWidth: 10,
+                      activeDotColor: Colors.blue,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -100,36 +201,91 @@ class _ResultScreenState extends State<ResultScreen> {
               return CircularProgressIndicator();
             },
           ),
-          Text(
-            className,
-            style: TextStyle(fontFamily: 'Pacifico', fontSize: 45),
-            textAlign: TextAlign.center,
+          SizedBox(
+            height: 20,
           ),
-          Text(
-            "${AppLocalizations.of(context)!.score}: $score",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  className,
+                  style: TextStyle(fontFamily: 'Pacifico', fontSize: 30),
+                  textAlign: TextAlign.center,
+                ),
+                IconButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Container(
+                          padding: EdgeInsets.all(20),
+                          height: MediaQuery.of(context).size.height * 0.20,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Center(
+                                child: Text(
+                                  AppLocalizations.of(context)!.accuracy +
+                                      score,
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              SizedBox(height: 10),
+                              Expanded(
+                                child: Text(
+                                  AppLocalizations.of(context)!.weare +
+                                      score +
+                                      AppLocalizations.of(context)!.confident +
+                                      className +
+                                      '.',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  icon: Icon(
+                    Icons.info_outline,
+                    size: 20,
+                  ),
+                  tooltip: "Learn more about this prediction",
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 20,
           ),
           Center(
             child: Container(
-              width: 200,
-              child: ElevatedButton(
-                onPressed: () async {
-                  await flutterTts.speak(className);
-                },
-                child: Text(
+              width: 250,
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.volume_up, size: 24),
+                label: Text(
                   AppLocalizations.of(context)!.pronounce,
                   style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 0, 0, 0)),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 255, 255, 255),
-                  foregroundColor: Colors.black,
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  side: BorderSide(color: Color.fromARGB(255, 94, 95, 98)),
+                  foregroundColor: Colors.white,
+                  backgroundColor: const Color.fromARGB(255, 113, 191, 255),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
+                onPressed: () => flutterTts.speak(className),
               ),
             ),
           ),

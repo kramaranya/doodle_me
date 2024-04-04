@@ -121,66 +121,76 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget buildGridTile(String displayName, String imageUrl) {
+  Widget buildGridTile(String displayName, String? imageUrl) {
     return GestureDetector(
-      onTap: () => flutterTts.speak(displayName),
+      onTap: () {
+        flutterTts.speak(displayName);
+      },
       onLongPress: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return Dialog(
-              insetPadding: EdgeInsets.all(15),
-              backgroundColor: Colors.transparent,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomCenter,
-                children: <Widget>[
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Image.network(imageUrl, fit: BoxFit.cover),
+        if (imageUrl != null) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return Dialog(
+                insetPadding: EdgeInsets.all(15),
+                backgroundColor: Colors.transparent,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.bottomCenter,
+                  children: <Widget>[
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image.network(imageUrl, fit: BoxFit.cover),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 50),
-                    ],
-                  ),
-                  Positioned(
-                    bottom: -10,
-                    child: ElevatedButton(
-                      onPressed: () => flutterTts.speak(displayName),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.black,
-                        backgroundColor: Color.fromARGB(255, 225, 225, 225),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        SizedBox(height: 50),
+                      ],
+                    ),
+                    Positioned(
+                      bottom: -10,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          flutterTts.speak(displayName);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.black,
+                          backgroundColor: Color.fromARGB(255, 225, 225, 225),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 15, vertical: 0),
                         ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 15, vertical: 0),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(AppLocalizations.of(context)!.pronounce,
-                              style: TextStyle(fontSize: 15)),
-                          SizedBox(width: 8),
-                          Icon(Icons.volume_up, size: 20),
-                        ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(fontSize: 15),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.volume_up, size: 20),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
+                  ],
+                ),
+              );
+            },
+          );
+        }
       },
       child: GridTile(
-        child: Image.network(imageUrl, fit: BoxFit.cover),
+        child: imageUrl != null
+            ? Image.network(imageUrl, fit: BoxFit.cover)
+            : SizedBox(),
         footer: GridTileBar(
           backgroundColor: Colors.black45,
           title: Text(displayName, style: TextStyle(fontSize: 14)),
