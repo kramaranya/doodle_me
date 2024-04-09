@@ -1,5 +1,5 @@
 {
-    "language": "English",
+    "language": "Language",
     "@language":{
         "description": "The current Language"
     },
@@ -82,5 +82,33 @@
     "confident": " confident this drawing matches the category ",
     "@confident":{
         "description": "confident"
+    },
+    "sendFeedback": "Send Feedback",
+    "@sendFeedback":{
+        "description": "sendFeedback"
+    },
+    "history": "History",
+    "@history":{
+        "description": "history"
+    },
+    "noDataInHistory": "No data in the history yet.",
+    "@noDataInHistory":{
+        "description": "noDataInHistory"
+    },
+    "localizedData": "Localized data not available.",
+    "@localizedData":{
+        "description": "localizedData"
+    },
+    "couldNotLaunchEmailApp": "Could Not Launch Email App.",
+    "@couldNotLaunchEmailApp":{
+        "description": "couldNotLaunchEmailApp"
+    },
+    "drawingisempty": "The drawing is empty. Please draw something first.",
+    "@drawingisempty":{
+        "description": "The drawing is empty. Please draw something first."
+    },
+    "feedbackDescription": "Let us know your thoughts or report any issues. Your feedback is valuable to us!",
+    "@drawingifeedbackDescriptionsempty":{
+        "description": "Let us know your thoughts or report any issues. Your feedback is valuable to us!"
     }
 }

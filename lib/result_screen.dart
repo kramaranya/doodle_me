@@ -18,11 +18,30 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   final FlutterTts flutterTts = FlutterTts();
   final controller = PageController(viewportFraction: 1);
+  ValueNotifier<int> colorIndexNotifier = ValueNotifier<int>(0);
+
+  List<Color> _lightColors = [
+    Color.fromARGB(255, 139, 220, 255),
+    Color.fromARGB(255, 177, 161, 255), // New color added
+    // Add more colors if you want
+  ];
+
+  List<Color> _darkColors = [
+    Color.fromARGB(255, 53, 42, 119),
+    Color.fromARGB(255, 0, 70, 168),
+    // Add more colors if you want
+  ];
 
   @override
   void initState() {
     super.initState();
     flutterTts.setSpeechRate(0.3);
+  }
+
+  @override
+  void dispose() {
+    colorIndexNotifier.dispose();
+    super.dispose();
   }
 
   Future<Map<String, String>> loadLocalizedClassNames(
@@ -55,7 +74,7 @@ class _ResultScreenState extends State<ResultScreen> {
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)!.explore,
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontFamily: 'OpenSans', fontWeight: FontWeight.w600),
         ),
         actions: [
           IconButton(
@@ -70,7 +89,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     child: Center(
                       child: Text(
                         AppLocalizations.of(context)!.tryAgainMessage,
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontFamily: 'OpenSans',
+                            fontWeight: FontWeight.w400),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -92,78 +114,100 @@ class _ResultScreenState extends State<ResultScreen> {
             return Center(child: Text('Error loading localized names'));
           }
           Map<String, String> localizedNames = snapshot.data!;
-          return Stack(
+          return Column(
             children: [
-              PageView.builder(
-                controller: controller,
-                itemCount: filteredTop5ClassesAndScores.length,
-                itemBuilder: (context, index) {
-                  String currentPrediction =
-                      filteredTop5ClassesAndScores[index];
-                  String key = currentPrediction.split(' ').first;
-                  String className = localizedNames[key] ?? key;
-                  String score =
-                      currentPrediction.split('(').last.replaceAll(')', '');
-                  double scoreValue = double.tryParse(score) ?? 0;
-                  String scorePercentage =
-                      (scoreValue * 100).toStringAsFixed(1) + '%';
-                  return buildPredictionPage(
-                      key, className, scorePercentage, context);
-                },
+              Padding(
+                // Adjust padding as needed to position the text
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  AppLocalizations.of(context)!.yourDrawingLooksLike + ':',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              if (filteredTop5ClassesAndScores.length > 1)
-                Positioned(
-                  top: 0,
-                  bottom: 100,
-                  left: 10,
-                  child: Center(
-                    child: IconButton(
-                      icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-                      onPressed: () {
-                        if (controller.page! > 0) {
-                          controller.previousPage(
-                            duration: Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
+              Expanded(
+                child: Stack(
+                  children: [
+                    PageView.builder(
+                      controller: controller,
+                      itemCount: filteredTop5ClassesAndScores.length,
+                      itemBuilder: (context, index) {
+                        String currentPrediction =
+                            filteredTop5ClassesAndScores[index];
+                        String key = currentPrediction.split(' ').first;
+                        String className = localizedNames[key] ?? key;
+                        String score = currentPrediction
+                            .split('(')
+                            .last
+                            .replaceAll(')', '');
+                        double scoreValue = double.tryParse(score) ?? 0;
+                        String scorePercentage =
+                            (scoreValue * 100).toStringAsFixed(1) + '%';
+                        return buildPredictionPage(
+                            key, className, scorePercentage, context);
                       },
                     ),
-                  ),
-                ),
-              if (filteredTop5ClassesAndScores.length > 1)
-                Positioned(
-                  top: 0,
-                  bottom: 100,
-                  right: 10,
-                  child: Center(
-                    child: IconButton(
-                      icon: Icon(Icons.arrow_forward_ios, color: Colors.white),
-                      onPressed: () {
-                        if (controller.page! <
-                            filteredTop5ClassesAndScores.length - 1) {
-                          controller.nextPage(
-                            duration: Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
+                    if (filteredTop5ClassesAndScores.length > 1)
+                      Positioned(
+                        top: 0,
+                        bottom: 100,
+                        left: 10,
+                        child: Center(
+                          child: IconButton(
+                            icon:
+                                Icon(Icons.arrow_back_ios, color: Colors.white),
+                            onPressed: () {
+                              if (controller.page! > 0) {
+                                controller.previousPage(
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    if (filteredTop5ClassesAndScores.length > 1)
+                      Positioned(
+                        top: 0,
+                        bottom: 100,
+                        right: 10,
+                        child: Center(
+                          child: IconButton(
+                            icon: Icon(Icons.arrow_forward_ios,
+                                color: Colors.white),
+                            onPressed: () {
+                              if (controller.page! <
+                                  filteredTop5ClassesAndScores.length - 1) {
+                                controller.nextPage(
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 8,
+                      child: Center(
+                        child: SmoothPageIndicator(
+                          controller: controller,
+                          count: filteredTop5ClassesAndScores.length,
+                          effect: WormEffect(
+                            dotHeight: 10,
+                            dotWidth: 10,
+                            activeDotColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 8,
-                child: Center(
-                  child: SmoothPageIndicator(
-                    controller: controller,
-                    count: filteredTop5ClassesAndScores.length,
-                    effect: WormEffect(
-                      dotHeight: 10,
-                      dotWidth: 10,
-                      activeDotColor: Colors.blue,
-                    ),
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -180,12 +224,6 @@ class _ResultScreenState extends State<ResultScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: 20),
-          Text(
-            AppLocalizations.of(context)!.yourDrawingLooksLike + ':',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
           SizedBox(height: 20),
           FutureBuilder<String>(
             future: FirebaseStorage.instance
@@ -209,8 +247,8 @@ class _ResultScreenState extends State<ResultScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  className,
-                  style: TextStyle(fontFamily: 'Pacifico', fontSize: 30),
+                  "   $className",
+                  style: TextStyle(fontFamily: 'OpenSans', fontSize: 30),
                   textAlign: TextAlign.center,
                 ),
                 IconButton(
@@ -231,8 +269,9 @@ class _ResultScreenState extends State<ResultScreen> {
                                   AppLocalizations.of(context)!.accuracy +
                                       score,
                                   style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                      fontSize: 21,
+                                      fontFamily: 'OpenSans',
+                                      fontWeight: FontWeight.w500),
                                 ),
                               ),
                               SizedBox(height: 10),
@@ -243,7 +282,10 @@ class _ResultScreenState extends State<ResultScreen> {
                                       AppLocalizations.of(context)!.confident +
                                       className +
                                       '.',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontFamily: 'OpenSans',
+                                      fontWeight: FontWeight.w400),
                                 ),
                               ),
                             ],
@@ -262,33 +304,62 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
           ),
           SizedBox(
-            height: 20,
+            height: 40,
           ),
-          Center(
-            child: Container(
-              width: 250,
-              height: 50,
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.volume_up, size: 24),
-                label: Text(
-                  AppLocalizations.of(context)!.pronounce,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color.fromARGB(255, 113, 191, 255),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
+          AnimatedBuilder(
+            animation: colorIndexNotifier,
+            builder: (context, child) {
+              // Determine the current and next color based on the theme
+              List<Color> colors =
+                  Theme.of(context).brightness == Brightness.dark
+                      ? _darkColors
+                      : _lightColors;
+              Color beginColor =
+                  colors[colorIndexNotifier.value % colors.length];
+              Color endColor =
+                  colors[(colorIndexNotifier.value + 1) % colors.length];
+
+              return Center(
+                child: Container(
+                  width: 250,
+                  height: 50,
+                  decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
+                    gradient: LinearGradient(
+                      colors: [beginColor, endColor],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                  child: ElevatedButton.icon(
+                    icon: Icon(
+                      Icons.volume_up,
+                      size: 24,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      AppLocalizations.of(context)!.pronounce,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontFamily: 'OpenSans',
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      backgroundColor: Colors
+                          .transparent, // Make the button background transparent
+                      shadowColor: Colors.transparent, // Remove shadow
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    onPressed: () => flutterTts.speak(className),
                   ),
                 ),
-                onPressed: () => flutterTts.speak(className),
-              ),
-            ),
-          ),
+              );
+            },
+          )
         ],
       ),
     );

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -7,6 +9,7 @@ import 'result_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'globals.dart';
 
 class DrawingScreen extends StatefulWidget {
   @override
@@ -77,6 +80,25 @@ class _DrawingScreenState extends State<DrawingScreen> {
   List<String>? top5ClassesAndScores;
   List<String>? classLabels;
   Map<String, String> localizedClassNames = {};
+  int _colorIndex = 0;
+  double _blurRadius = 5.0;
+  double topOffsetY = 0.0;
+  double topOffsetX = 0.0;
+  final GlobalKey _gestureDetectorKey = GlobalKey();
+
+  List<Color> _lightColors = [
+    Color.fromARGB(255, 139, 220, 255),
+    Color.fromARGB(255, 177, 161, 255),
+    Color.fromARGB(255, 159, 255, 249),
+    Color.fromARGB(255, 246, 255, 194)
+  ];
+
+  List<Color> _darkColors = [
+    Color.fromRGBO(22, 90, 102, 1),
+    Color.fromRGBO(76, 12, 83, 1),
+    Color.fromRGBO(8, 29, 52, 1),
+    Color.fromRGBO(80, 27, 107, 1),
+  ];
 
   Future<void> loadModel(List<List<double>> encodedDrawing) async {
     try {
@@ -126,15 +148,23 @@ class _DrawingScreenState extends State<DrawingScreen> {
     print(top5ClassesAndScores);
   }
 
-  double topOffsetY = 0.0;
-  double topOffsetX = 0.0;
-  final GlobalKey _gestureDetectorKey = GlobalKey();
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => calculateOffset());
     predictedClass = '';
+    _startColorTransition();
+  }
+
+  void _startColorTransition() {
+    Timer.periodic(Duration(seconds: 5), (timer) {
+      setState(() {
+        _colorIndex++;
+        if (_colorIndex == _lightColors.length) {
+          _colorIndex = 0;
+        }
+      });
+    });
   }
 
   @override
@@ -172,16 +202,84 @@ class _DrawingScreenState extends State<DrawingScreen> {
     final rightBoundary = offsetX + drawingAreaSize;
     final topBoundary = offsetY;
     final bottomBoundary = drawingAreaSize;
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context)!.drawyourdoodle,
-          style: TextStyle(fontWeight: FontWeight.bold),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: AnimatedContainer(
+          duration: Duration(seconds: 5),
+          onEnd: () {
+            setState(() {
+              // Ensure the color transition continues
+              _startColorTransition();
+            });
+          },
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDarkMode
+                  ? [
+                      _darkColors[_colorIndex % _darkColors.length],
+                      _darkColors[(_colorIndex + 1) % _darkColors.length],
+                      _darkColors[(_colorIndex + 2) % _darkColors.length],
+                      _darkColors[(_colorIndex + 3) % _darkColors.length],
+                    ]
+                  : [
+                      _lightColors[_colorIndex % _lightColors.length],
+                      _lightColors[(_colorIndex + 1) % _lightColors.length],
+                      _lightColors[(_colorIndex + 2) % _lightColors.length],
+                      _lightColors[(_colorIndex + 3) % _lightColors.length],
+                    ],
+            ),
+          ),
+          child: AppBar(
+            backgroundColor: Color.fromARGB(0, 255, 255, 255),
+            elevation: 0,
+            title: Text(
+              AppLocalizations.of(context)!.drawyourdoodle,
+              style: TextStyle(
+                  fontFamily: 'OpenSans', fontWeight: FontWeight.w600),
+            ),
+          ),
         ),
       ),
       body: Stack(
         children: [
+          AnimatedContainer(
+            duration: Duration(seconds: 5),
+            onEnd: () {
+              setState(() {
+                _startColorTransition();
+                isDarkMode = Theme.of(context).brightness == Brightness.dark;
+              });
+            },
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDarkMode
+                    ? [
+                        _darkColors[_colorIndex % _darkColors.length],
+                        _darkColors[(_colorIndex + 1) % _darkColors.length],
+                        _darkColors[(_colorIndex + 2) % _darkColors.length],
+                        _darkColors[(_colorIndex + 3) % _darkColors.length],
+                      ]
+                    : [
+                        _lightColors[_colorIndex % _lightColors.length],
+                        _lightColors[(_colorIndex + 1) % _lightColors.length],
+                        _lightColors[(_colorIndex + 2) % _lightColors.length],
+                        _lightColors[(_colorIndex + 3) % _lightColors.length],
+                      ],
+              ),
+            ),
+            child: BackdropFilter(
+              filter:
+                  ImageFilter.blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
           Positioned(
             left: offsetX,
             top: offsetY,
@@ -227,8 +325,9 @@ class _DrawingScreenState extends State<DrawingScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
-                  color:
-                      const Color.fromARGB(255, 175, 173, 173).withOpacity(0.3),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Color.fromARGB(255, 0, 0, 0).withOpacity(0.4)
+                      : Color.fromARGB(255, 255, 255, 255).withOpacity(0.4),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: RichText(
@@ -238,31 +337,34 @@ class _DrawingScreenState extends State<DrawingScreen> {
                       TextSpan(
                         text: AppLocalizations.of(context)!.looksLike + ' ',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          fontFamily: 'OpenSans',
+                          fontWeight: FontWeight.w400,
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? Color.fromARGB(255, 114, 114, 114)
-                              : Color.fromARGB(255, 167, 167, 167),
+                              ? Color.fromARGB(255, 226, 226, 226)
+                              : Color.fromARGB(198, 29, 29, 29),
                         ),
                       ),
                       TextSpan(
                         text: predictedClass,
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          fontFamily: 'OpenSans',
+                          fontWeight: FontWeight.w500,
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? Color.fromARGB(255, 167, 167, 167)
-                              : Color.fromARGB(255, 114, 114, 114),
+                              ? Color.fromARGB(255, 255, 255, 255)
+                              : Color.fromARGB(255, 0, 0, 0),
                         ),
                       ),
                       TextSpan(
                         text: '...',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          fontFamily: 'OpenSans',
+                          fontWeight: FontWeight.w400,
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? Color.fromARGB(255, 114, 114, 114)
-                              : Color.fromARGB(255, 167, 167, 167),
+                              ? Color.fromARGB(255, 226, 226, 226)
+                              : Color.fromARGB(198, 29, 29, 29),
                         ),
                       ),
                     ],
@@ -276,18 +378,55 @@ class _DrawingScreenState extends State<DrawingScreen> {
             right: 20,
             child: FloatingActionButton(
               onPressed: () async {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ResultScreen(
-                        top5ClassesAndScores: top5ClassesAndScores),
-                  ),
-                );
+                if (top5ClassesAndScores != null &&
+                    top5ClassesAndScores!.isNotEmpty) {
+                  String topPrediction =
+                      top5ClassesAndScores![0].split(' ').first;
+                  if (!lastSixPredictions.contains(topPrediction)) {
+                    // Insert new prediction at the start of the list
+                    lastSixPredictions.insert(0, topPrediction);
+                    // If the list has more than 5 elements, remove the last one
+                    if (lastSixPredictions.length > 6) {
+                      lastSixPredictions.removeLast();
+                    }
+                    lastSixPredictionsStreamController.add(lastSixPredictions);
+                  }
+                  // String topPrediction =
+                  //     top5ClassesAndScores![0].split(' ').first;
+
+                  // // Use HistoryManager to add the new top prediction to the history file
+                  // await historyManager.addToHistory(topPrediction);
+
+                  // // You can optionally refresh or update any UI component that displays the history
+                  // // For example, if using a StreamController for history items:
+                  // //List<String> updatedHistory = await historyManager.readHistory();
+                  // //lastSixPredictionsStreamController.add(updatedHistory);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ResultScreen(
+                          top5ClassesAndScores: top5ClassesAndScores),
+                    ),
+                  );
+                } else {
+                  // Show a SnackBar when top5ClassesAndScores is empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text(AppLocalizations.of(context)!.drawingisempty),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
               },
               tooltip: 'See Result',
               child: Icon(Icons.check),
-              backgroundColor: Color.fromARGB(255, 113, 191, 255),
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black.withOpacity(0.7)
+                  : Colors.white.withOpacity(0.7),
+              foregroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
             ),
           ),
           Positioned(
@@ -303,8 +442,12 @@ class _DrawingScreenState extends State<DrawingScreen> {
               },
               tooltip: 'Clear Drawing',
               child: Icon(Icons.delete),
-              backgroundColor: Color.fromARGB(255, 113, 191, 255),
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black.withOpacity(0.7)
+                  : Colors.white.withOpacity(0.7),
+              foregroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
             ),
           ),
         ],
@@ -316,24 +459,31 @@ class _DrawingScreenState extends State<DrawingScreen> {
 class DrawingPainter extends CustomPainter {
   final List<Offset?> points;
   DrawingPainter({required this.points});
-  Paint backgroundPaint = Paint()
-    ..color = const Color.fromARGB(255, 255, 255, 255);
+
+  Paint backgroundPaint = Paint()..color = Colors.white.withOpacity(0.5);
 
   final Paint framePaint = Paint()
-    ..color = Color.fromARGB(255, 113, 191, 255)
+    ..color = Color.fromARGB(255, 255, 255, 255).withOpacity(0.5)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 5;
+
+  final double borderRadius = 12.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..color = Colors.black
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 7.0;
+      ..strokeWidth = 8.0;
 
-    canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), framePaint);
+    RRect roundedRectangle = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(borderRadius),
+    );
+
+    canvas.drawRRect(roundedRectangle, backgroundPaint);
+
+    canvas.drawRRect(roundedRectangle, framePaint);
 
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {

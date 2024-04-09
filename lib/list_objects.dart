@@ -69,54 +69,79 @@ class _HomePageState extends State<HomePage> {
           controller: searchController,
           decoration: InputDecoration(
             hintText: AppLocalizations.of(context)!.search + '...',
-            border: InputBorder.none,
+            fillColor: Theme.of(context).brightness == Brightness.dark
+                ? const Color.fromARGB(255, 43, 43, 43)
+                : Colors.grey[200],
+            filled: true,
+            border: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.all(Radius.circular(25)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.all(Radius.circular(20)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.all(Radius.circular(30)),
+            ),
             suffixIcon: Icon(Icons.search),
+            contentPadding: EdgeInsets.all(15),
+          ),
+          style: TextStyle(
+            fontSize: 20,
+            fontFamily: 'OpenSans',
+            fontWeight: FontWeight.w400,
           ),
           onChanged: (value) => setState(() {}),
         ),
       ),
-      body: FutureBuilder<List<String>>(
-        future: _classNamesFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return CircularProgressIndicator();
-          var filteredList = snapshot.data!
-              .where((className) => className
-                  .toLowerCase()
-                  .contains(searchController.text.toLowerCase()))
-              .toList();
+      body: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: FutureBuilder<List<String>>(
+          future: _classNamesFuture,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return CircularProgressIndicator();
+            var filteredList = snapshot.data!
+                .where((className) => className
+                    .toLowerCase()
+                    .contains(searchController.text.toLowerCase()))
+                .toList();
 
-          return FutureBuilder<Map<String, String>>(
-            future: _localizedNamesFuture,
-            builder: (context, localizedSnapshot) {
-              if (!localizedSnapshot.hasData)
-                return CircularProgressIndicator();
-              return GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 3.0,
-                  mainAxisSpacing: 3.0,
-                  childAspectRatio: 1.0,
-                ),
-                itemCount: filteredList.length,
-                itemBuilder: (context, index) {
-                  String className = filteredList[index];
-                  String displayName =
-                      localizedSnapshot.data![className] ?? className;
-                  return FutureBuilder<String>(
-                    future: getImageUrl(className),
-                    builder: (context, imageSnapshot) {
-                      if (imageSnapshot.hasData) {
-                        return buildGridTile(displayName, imageSnapshot.data!);
-                      } else {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
+            return FutureBuilder<Map<String, String>>(
+              future: _localizedNamesFuture,
+              builder: (context, localizedSnapshot) {
+                if (!localizedSnapshot.hasData)
+                  return CircularProgressIndicator();
+                return GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 3.0,
+                    mainAxisSpacing: 3.0,
+                    childAspectRatio: 1.0,
+                  ),
+                  itemCount: filteredList.length,
+                  itemBuilder: (context, index) {
+                    String className = filteredList[index];
+                    String displayName =
+                        localizedSnapshot.data![className] ?? className;
+                    return FutureBuilder<String>(
+                      future: getImageUrl(className),
+                      builder: (context, imageSnapshot) {
+                        if (imageSnapshot.hasData) {
+                          return buildGridTile(
+                              displayName, imageSnapshot.data!);
+                        } else {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -172,7 +197,10 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Text(
                               displayName,
-                              style: TextStyle(fontSize: 15),
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontFamily: 'OpenSans',
+                                  fontWeight: FontWeight.w500),
                             ),
                             SizedBox(width: 8),
                             Icon(Icons.volume_up, size: 20),
@@ -193,7 +221,14 @@ class _HomePageState extends State<HomePage> {
             : SizedBox(),
         footer: GridTileBar(
           backgroundColor: Colors.black45,
-          title: Text(displayName, style: TextStyle(fontSize: 14)),
+          title: Text(
+            displayName,
+            style: TextStyle(
+                fontSize: 15,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.w400,
+                color: Colors.white),
+          ),
         ),
       ),
     );

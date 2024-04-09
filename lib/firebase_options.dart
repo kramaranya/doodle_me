@@ -17,7 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -25,7 +28,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -43,19 +49,9 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDWVPxA_ZXfzQg_t5jYjLUGvC6xf7AC318',
-    appId: '1:124697821162:web:3c7053c71d646412cc3c93',
-    messagingSenderId: '124697821162',
-    projectId: 'doodle-me-eeb6e',
-    authDomain: 'doodle-me-eeb6e.firebaseapp.com',
-    storageBucket: 'doodle-me-eeb6e.appspot.com',
-    measurementId: 'G-KMBB2SCWXS',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAA4cIHn1n-U8Dshy8h645dNGR4u63dMUs',
-    appId: '1:124697821162:android:0399d0b685e0a45ecc3c93',
+    appId: '1:124697821162:android:f201c5514e5c0593cc3c93',
     messagingSenderId: '124697821162',
     projectId: 'doodle-me-eeb6e',
     storageBucket: 'doodle-me-eeb6e.appspot.com',
@@ -63,19 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBQ1PD1sI_NQGgxe1Zm6KxKL8T_mK3Pqlk',
-    appId: '1:124697821162:ios:40fc71e2baf48d61cc3c93',
+    appId: '1:124697821162:ios:d1b8d0b637302159cc3c93',
     messagingSenderId: '124697821162',
     projectId: 'doodle-me-eeb6e',
     storageBucket: 'doodle-me-eeb6e.appspot.com',
-    iosBundleId: 'com.example.doodleMe',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBQ1PD1sI_NQGgxe1Zm6KxKL8T_mK3Pqlk',
-    appId: '1:124697821162:ios:9f4031313b83053acc3c93',
-    messagingSenderId: '124697821162',
-    projectId: 'doodle-me-eeb6e',
-    storageBucket: 'doodle-me-eeb6e.appspot.com',
-    iosBundleId: 'com.example.doodleMe.RunnerTests',
+    iosBundleId: 'com.kramaranya.doodleMe',
   );
 }

@@ -1,5 +1,5 @@
 {
-    "language": "Français",
+    "language": "Langue",
     "doodle": "Griffonnage",
     "draw": "Dessiner",
     "settings": "Paramètres",
@@ -19,5 +19,12 @@
     "helpTooltip": "Aide",
     "weare": "Nous sommes ",
     "accuracy": "Précision: ",
-    "confident": " convaincus que ce dessin correspond à la catégorie "
+    "confident": " convaincus que ce dessin correspond à la catégorie ",
+    "sendFeedback": "Envoyer des Commentaires",
+    "history": "Histoire",
+    "noDataInHistory": "Aucune donnée dans l'historique pour l'instant.",
+    "localizedData": "ЛDonnées localisées non disponibles.",
+    "couldNotLaunchEmailApp": "Impossible de lancer l'application de messagerie.",
+    "drawingisempty": "Le dessin est vide. Veuillez d'abord dessiner quelque chose.",
+    "feedbackDescription": "Faites-nous part de vos commentaires ou signalez tout problème. Votre feedback a de la valeur pour nous!"
 }
