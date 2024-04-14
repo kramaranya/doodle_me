@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:doodle_me/firebase_options.dart';
+import 'package:doodle_me/globals.dart';
 import 'package:doodle_me/history_screen.dart';
 import 'package:doodle_me/list_objects.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/l10n.dart';
 import 'settings_screen.dart';
 import 'drawing_screen.dart';
@@ -14,10 +19,37 @@ import 'package:flutter/animation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(MaterialApp(home: IntroScreen(), debugShowCheckedModeBanner: false));
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? savedLocaleCode = prefs.getString('localeCode') ?? 'en';
+  ThemeMode savedThemeMode =
+      (prefs.getString('themeMode') ?? 'light') == 'light'
+          ? ThemeMode.light
+          : ThemeMode.dark;
+
+  final historyJson = prefs.getString('historyData');
+  if (historyJson != null) {
+    final List<dynamic> decodedData = json.decode(historyJson);
+    lastTenPredictions = List<String>.from(decodedData);
+  }
+
+  runApp(MaterialApp(
+    home: IntroScreen(
+      initialLocale: Locale(savedLocaleCode),
+      initialThemeMode: savedThemeMode,
+    ),
+    debugShowCheckedModeBanner: false,
+  ));
 }
 
 class IntroScreen extends StatefulWidget {
+  final Locale initialLocale;
+  final ThemeMode initialThemeMode;
+
+  const IntroScreen(
+      {Key? key, required this.initialLocale, required this.initialThemeMode})
+      : super(key: key);
+
   @override
   _IntroScreenState createState() => _IntroScreenState();
 }
@@ -29,7 +61,10 @@ class _IntroScreenState extends State<IntroScreen> {
     Timer(
       Duration(seconds: 3),
       () => Navigator.of(context).pushReplacement(MaterialPageRoute(
-        builder: (context) => BottomNavigationBarApp(),
+        builder: (context) => BottomNavigationBarApp(
+          initialLocale: widget.initialLocale,
+          initialThemeMode: widget.initialThemeMode,
+        ),
       )),
     );
   }
@@ -68,7 +103,16 @@ class _IntroScreenState extends State<IntroScreen> {
   }
 }
 
+class AppReview {}
+
 class BottomNavigationBarApp extends StatefulWidget {
+  final Locale initialLocale;
+  final ThemeMode initialThemeMode;
+
+  const BottomNavigationBarApp(
+      {Key? key, required this.initialLocale, required this.initialThemeMode})
+      : super(key: key);
+
   @override
   _BottomNavigationBarAppState createState() => _BottomNavigationBarAppState();
 }
@@ -76,15 +120,26 @@ class BottomNavigationBarApp extends StatefulWidget {
 class _BottomNavigationBarAppState extends State<BottomNavigationBarApp> {
   Locale _currentLocale = Locale('en');
   ThemeMode _currentThemeMode = ThemeMode.light;
-  // Define a globalKey for navigation
 
-  void setLocale(Locale locale) {
+  @override
+  void initState() {
+    super.initState();
+    _currentLocale = widget.initialLocale;
+    _currentThemeMode = widget.initialThemeMode;
+  }
+
+  void setLocale(Locale locale) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('localeCode', locale.languageCode);
     setState(() {
       _currentLocale = locale;
     });
   }
 
-  void setThemeMode(ThemeMode themeMode) {
+  void setThemeMode(ThemeMode themeMode) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'themeMode', themeMode == ThemeMode.dark ? 'dark' : 'light');
     setState(() {
       _currentThemeMode = themeMode;
     });
@@ -222,6 +277,7 @@ class _BottomNavigationBarExampleState extends State<BottomNavigationBarExample>
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: AnimatedBuilder(

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'result_screen.dart';
 import 'dart:convert';
@@ -182,6 +183,12 @@ class _DrawingScreenState extends State<DrawingScreen> {
       localizedClassNames =
           jsonMap.map((key, value) => MapEntry(key, value.toString()));
     });
+  }
+
+  Future<void> saveHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyJson = json.encode(lastTenPredictions);
+    await prefs.setString('historyData', historyJson);
   }
 
   void calculateOffset() {
@@ -382,25 +389,14 @@ class _DrawingScreenState extends State<DrawingScreen> {
                     top5ClassesAndScores!.isNotEmpty) {
                   String topPrediction =
                       top5ClassesAndScores![0].split(' ').first;
-                  if (!lastSixPredictions.contains(topPrediction)) {
-                    // Insert new prediction at the start of the list
-                    lastSixPredictions.insert(0, topPrediction);
-                    // If the list has more than 5 elements, remove the last one
-                    if (lastSixPredictions.length > 6) {
-                      lastSixPredictions.removeLast();
+                  if (!lastTenPredictions.contains(topPrediction)) {
+                    lastTenPredictions.insert(0, topPrediction);
+                    if (lastTenPredictions.length > 10) {
+                      lastTenPredictions.removeLast();
                     }
-                    lastSixPredictionsStreamController.add(lastSixPredictions);
+                    lastTenPredictionsStreamController.add(lastTenPredictions);
+                    saveHistory();
                   }
-                  // String topPrediction =
-                  //     top5ClassesAndScores![0].split(' ').first;
-
-                  // // Use HistoryManager to add the new top prediction to the history file
-                  // await historyManager.addToHistory(topPrediction);
-
-                  // // You can optionally refresh or update any UI component that displays the history
-                  // // For example, if using a StreamController for history items:
-                  // //List<String> updatedHistory = await historyManager.readHistory();
-                  // //lastSixPredictionsStreamController.add(updatedHistory);
                   Navigator.push(
                     context,
                     MaterialPageRoute(

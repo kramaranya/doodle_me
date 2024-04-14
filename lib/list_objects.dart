@@ -7,6 +7,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
+  HomePage({Key? key}) : super(key: key);
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -113,6 +115,13 @@ class _HomePageState extends State<HomePage> {
               builder: (context, localizedSnapshot) {
                 if (!localizedSnapshot.hasData)
                   return CircularProgressIndicator();
+                var filteredList = snapshot.data!.where((className) {
+                  String? displayName = localizedSnapshot.data![className];
+                  return displayName != null &&
+                      displayName
+                          .toLowerCase()
+                          .contains(searchController.text.toLowerCase());
+                }).toList();
                 return GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,

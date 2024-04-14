@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'l10n/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Function(Locale) setLocale;
@@ -40,6 +41,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _localThemeMode = widget.currentThemeMode;
+  }
+
+  Future<void> _persistLocale(String localeCode) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('localeCode', localeCode);
+  }
+
+  Future<void> _persistThemeMode(ThemeMode mode) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'themeMode', mode == ThemeMode.dark ? 'dark' : 'light');
   }
 
   @override
@@ -171,6 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (Locale? newValue) {
               if (newValue != null) {
                 widget.setLocale(newValue);
+                _persistLocale(newValue.languageCode);
               }
             },
             items: L10n.all.map<DropdownMenuItem<Locale>>((Locale locale) {
@@ -217,10 +230,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             inactiveThumbColor: Colors.black,
             inactiveTrackColor: Colors.white,
             onChanged: (bool value) {
+              final mode = value ? ThemeMode.dark : ThemeMode.light;
               setState(() {
-                _localThemeMode = value ? ThemeMode.dark : ThemeMode.light;
+                _localThemeMode = mode;
                 widget.setThemeMode(_localThemeMode);
               });
+              _persistThemeMode(_localThemeMode);
             },
           ),
         ),

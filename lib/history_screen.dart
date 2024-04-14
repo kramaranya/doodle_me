@@ -20,7 +20,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void initState() {
     super.initState();
     flutterTts = FlutterTts();
-    //_loadLocalizedClassNames();
   }
 
   @override
@@ -29,8 +28,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Now it's safe to load localized names or access theme data.
     _localizedNamesFuture =
         loadLocalizedClassNames(Localizations.localeOf(context));
-    Locale locale = Localizations.localeOf(context);
-    flutterTts.setLanguage(locale.toLanguageTag()).then((result) {
+    flutterTts
+        .setLanguage(Localizations.localeOf(context).toLanguageTag())
+        .then((result) {
       if (result != 1) {
         debugPrint("FlutterTts setLanguage failed");
       }
@@ -69,6 +69,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ? darkColors
         : lightColors;
 
+    List<String> initialPredictions = lastTenPredictions;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -92,7 +94,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               Expanded(
                 child: StreamBuilder<List<String>>(
-                  stream: lastSixPredictionsStreamController.stream,
+                  stream: lastTenPredictionsStreamController.stream,
+                  initialData: initialPredictions,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
@@ -171,7 +174,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       );
                     }
 
-                    List<String> predictions = snapshot.data!;
+                    List<String> predictions = snapshot.data ?? [];
                     return FutureBuilder<Map<String, String>>(
                       future: _localizedNamesFuture,
                       builder: (context, localizedSnapshot) {
@@ -215,8 +218,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       itemCount: predictions.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 10.0,
-        mainAxisSpacing: 10.0,
+        crossAxisSpacing: 3.0,
+        mainAxisSpacing: 3.0,
+        childAspectRatio: 1.0,
       ),
       itemBuilder: (context, index) {
         String predictionKey = predictions[index];
