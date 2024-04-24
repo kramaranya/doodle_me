@@ -53,11 +53,8 @@ Future<List<List<double>>> sendDrawingToServer(
       'canvasSize': {'width': width, 'height': height},
     }),
   );
-  print(canvasSize);
 
   if (response.statusCode == 200) {
-    print("Data sent successfully");
-
     final decodedResponse = jsonDecode(response.body);
 
     final List<List<double>> result =
@@ -145,8 +142,6 @@ class _DrawingScreenState extends State<DrawingScreen> {
     top5ClassesAndScores = top5Indices
         .map((i) => '${classLabels![i]} (${scores[i].toStringAsFixed(2)})')
         .toList();
-
-    print(top5ClassesAndScores);
   }
 
   @override
